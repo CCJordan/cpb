@@ -9,6 +9,8 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
+#include <cstring>
+#include <string>
 #include <list>
 #include <unistd.h>
 #include <glob.h>
@@ -127,21 +129,21 @@ void copyFile(string src, string dst) {
     output.open(dst, ios::out | ios::trunc | ios::binary );
     string fileName = copyHelper::getFileName( src );
     if (output.is_open() && infile.is_open()) {
-
+        unsigned int bs = blocksize;
         char * memblock;
-        memblock = new char[blocksize];
+        memblock = new char[bs];
 
         long long fileSize = copyHelper::getFileSize( infile );
         long long restSize = fileSize;
         int lastLenght = 0;
         
         while( restSize > 0 ) {
-            if (restSize - blocksize < 0) {
-                blocksize = (unsigned int) restSize;
+            if (restSize - bs < 0) {
+                bs = (unsigned int) restSize;
             }
-            infile.read(memblock, blocksize);
-            output.write(memblock, blocksize);
-            restSize -= blocksize;
+            infile.read(memblock, bs);
+            output.write(memblock, bs);
+            restSize -= bs;
             int milage = ((double) (fileSize - restSize) / (double) fileSize) * BARLENGTH;
             if (lastLenght < milage) {
                 drawProgressBar(milage, fileName);
@@ -204,7 +206,7 @@ list<string> globPath( string path ) {
     globbuf.gl_offs = 0;
     glob(path.c_str(), GLOB_BRACE | GLOB_TILDE | GLOB_MARK, NULL, &globbuf);
     list<string> paths;
-    for(int i = 0; i < globbuf.gl_matchc; i++) {
+    for(int i = 0; i < globbuf.gl_pathc; i++) {
         char * tmpPath = globbuf.gl_pathv[i];
         char * absPath = new char[PATH_MAX];
         realpath(tmpPath, absPath);

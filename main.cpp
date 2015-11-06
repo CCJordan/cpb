@@ -11,6 +11,7 @@
 #include <regex>
 #include <cstring>
 #include <string>
+#include <sstream>
 #include <list>
 #include <unistd.h>
 #include <glob.h>
@@ -30,6 +31,9 @@ list<string> getInputFiles( string src, string dest );
 list<string> globPath( string path );
 void printHelp( string cmdName );
 void printUsage( string cmdName );
+vector<string> split(string str, char delimiter);
+bool hasTheSameEnd(string str1, string str2);
+string matchPaths(string relPath, string absPath);
 
 unsigned int blocksize = 1024 * 1024 * 10;
 bool breakForNewFile = false;
@@ -37,9 +41,15 @@ bool breakForNewFile = false;
 int main(int argc, const char * argv[]) {
     string destination;
     char *dest = new char[PATH_MAX];
-    
+
     realpath(argv[argc - 1], dest);
     destination = dest;
+    // check is the end of argv[2] equal to the end of dest?
+    // if not, do something about it.
+    if (!hasTheSameEnd(argv[argc - 1], destination)) {
+        destination = matchPaths(argv[argc - 1], destination);
+    }
+    // else: proced with normal operation.
     int lastSwitchFound = 1;
     
     // check for switches or a to short argument list
@@ -76,10 +86,7 @@ int main(int argc, const char * argv[]) {
     // check if destination exists
     if (copyHelper::is_file(dest) && argc > 3) {
         cout << "Destination is a file, you have multiple sources..." << endl;
-    } else if (!copyHelper::is_dir(dest)) {
-        mkdir(dest, 0755);
-    }
-    // cout << "Destination: " << destination << endl;
+    } 
     
     string wd = getCurrentPath();
     list<copyFileSet> toCopy;
@@ -120,6 +127,59 @@ int main(int argc, const char * argv[]) {
     }
     cout << "\n";
     return 0;
+}
+
+vector<string> split(string str, char delimiter) {
+    vector<string> internal;
+    stringstream ss(str);
+    string tok;
+    
+    while(getline(ss, tok, delimiter)) {
+        internal.push_back(tok);
+    }
+    
+    return internal;
+}
+
+bool hasTheSameEnd(string str1, string str2) {
+    vector<string> relPathVec = split(str1, '/');
+    vector<string> absPathVec = split(str2, '/');
+    return relPathVec.back() == absPathVec.back();
+}
+
+
+// @param relPath:    relative path to be attachet to the absolute path
+// @param absPath:    absolute path to be extended
+string matchPaths(string relPath, string absPath) {
+    vector<string> relPathVec = split(relPath, '/');
+    // remove leading ".." and "." dirs
+    while (relPathVec.front() == ".." || relPathVec.front() == ".") {
+        relPathVec.erase(relPathVec.begin());
+    }
+    
+    vector<string> absPathVec = split(absPath, '/');
+    absPathVec.erase(absPathVec.end() - 1);
+    
+    vector<string>::iterator relPathIterator = relPathVec.begin();
+    vector<string>::iterator absPathIterator = absPathVec.end() - 1;
+    while(*relPathIterator != *absPathIterator) {
+        absPathVec.erase(absPathIterator);
+        absPathIterator--;
+    }
+    string returnPath = "";
+    for(vector<string>::iterator i = absPathVec.begin() + 1; i <= absPathIterator; i++) {
+        returnPath += "/" + *i;
+    }
+    
+    vector<string>::iterator iEnd = relPathVec.end() - 1;
+    for(vector<string>::iterator i = relPathVec.begin() + 1; i <= iEnd; i++) {
+        returnPath += "/" + *i;
+        if (i != iEnd) {
+            mkdir(returnPath.c_str(), 0755);
+        }
+    }
+    
+    return returnPath;
 }
 
 void copyFile(string src, string dst) {

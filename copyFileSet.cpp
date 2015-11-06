@@ -92,6 +92,7 @@ list<string> copyFileSet::addDirs(string path) {
             DIR *dir;
             struct dirent *ent;
             if ((dir = opendir( tmpAbsPath.c_str() )) != NULL) {
+                absolutePaths.push_back(tmpAbsPath);
                 while ((ent = readdir (dir)) != NULL) {
                     string tmpFileName = ent->d_name;
                     if (tmpFileName.compare(".") != 0 && tmpFileName.compare("..") != 0) {

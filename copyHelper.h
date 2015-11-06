@@ -25,6 +25,7 @@ public:
     static string getFileName( string path );
     static string getDirName( string path );
     static long long getFileSize( ifstream &file );
+    static string removeTrailingSlash( string path );
 };
 
 #endif /* defined(__cpProgressBar__copyHelper__) */

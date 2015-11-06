@@ -36,15 +36,20 @@ string copyHelper::getFileName( string path ) {
 
 string copyHelper::getDirName(string path) {
     if (path.length() > 1) {
-        if (path[path.length() - 1] == '/') {
-            path.erase(path.length() - 1, 1);
-        }
+        path = removeTrailingSlash(path);
         string dirname = copyHelper::getFileName(path);
         path.erase(path.length() - dirname.length(), dirname.length());
         return path;
     } else {
         return path;
     }
+}
+
+string copyHelper::removeTrailingSlash(string path) {
+    if (path[path.length() - 1] == '/') {
+        path.erase(path.length() - 1, 1);
+    }
+    return path;
 }
 
 long long copyHelper::getFileSize( ifstream &file ) {
